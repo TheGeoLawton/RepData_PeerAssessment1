@@ -35,10 +35,8 @@ library(ggplot2)
 dat2 <- dat %>% group_by(date) %>% summarize(Daily_Steps=sum(steps))
 dat2
 
-g <- ggplot(data=dat2, aes(x= date, y= Daily_Steps))+
-        geom_bar(stat="identity")+
-        theme(axis.title.x = element_text(face="bold", colour="#990000", size=20),
-           axis.text.x  = element_text(angle=90, vjust=0.5, size=8))
+g <- ggplot(data=dat2, aes(x= Daily_Steps))+
+        geom_histogram()
 print(g)
 
 ```
@@ -47,12 +45,26 @@ From here, it's simple to find the average of all the days.
 
 ```{r}
 mean(dat2$Daily_Steps, na.rm=TRUE) #na.rm=TRUE is important or else this will return NA
+median(dat2$Daily_Steps, na.rm=TRUE)
 ```
 
 ## What is the average daily activity pattern?
 Finding the daily activity pattern means we have to start back at dat and summarize the steps by interval.
 ```{r}
+library(ggplot2)
+library(dplyr)
+dat2 <- dat %>% group_by(interval) %>% summarize("Average_Steps" = mean(steps, na.rm=TRUE))
 
+dat2
+
+g <- ggplot(data=dat2, aes(x= interval, y= Average_Steps)) +
+        geom_line() +
+        theme(axis.title.x = element_text(face="bold", colour="#990000", size=20),
+           axis.text.x  = element_text(angle=90, vjust=0.5, size=8))
+
+print(g)
+
+which.max(dat2$Average_Steps, na.rm=TRUE)
 ```
 
 

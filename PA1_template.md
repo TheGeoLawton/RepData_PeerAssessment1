@@ -102,15 +102,13 @@ dat2
 ```
 
 ```r
-g <- ggplot(data=dat2, aes(x= date, y= Daily_Steps))+
-        geom_bar(stat="identity")+
-        theme(axis.title.x = element_text(face="bold", colour="#990000", size=20),
-           axis.text.x  = element_text(angle=90, vjust=0.5, size=8))
+g <- ggplot(data=dat2, aes(x= Daily_Steps))+
+        geom_histogram()
 print(g)
 ```
 
 ```
-## Warning: Removed 8 rows containing missing values (position_stack).
+## stat_bin: binwidth defaulted to range/30. Use 'binwidth = x' to adjust this.
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-5-1.png)
@@ -119,15 +117,70 @@ From here, it's simple to find the average of all the days.
 
 
 ```r
-mean(dat2$Daily_Steps, na.rm=TRUE)
+mean(dat2$Daily_Steps, na.rm=TRUE) #na.rm=TRUE is important or else this will return NA
 ```
 
 ```
 ## [1] 10766.19
 ```
 
-## What is the average daily activity pattern?
+```r
+median(dat2$Daily_Steps, na.rm=TRUE)
+```
 
+```
+## [1] 10765
+```
+
+## What is the average daily activity pattern?
+Finding the daily activity pattern means we have to start back at dat and summarize the steps by interval.
+
+```r
+library(ggplot2)
+library(dplyr)
+dat2 <- dat %>% group_by(interval) %>% summarize("Average_Steps" = mean(steps, na.rm=TRUE))
+
+dat2
+```
+
+```
+## Source: local data frame [288 x 2]
+## 
+##    interval Average_Steps
+##       (int)         (dbl)
+## 1         0     1.7169811
+## 2         5     0.3396226
+## 3        10     0.1320755
+## 4        15     0.1509434
+## 5        20     0.0754717
+## 6        25     2.0943396
+## 7        30     0.5283019
+## 8        35     0.8679245
+## 9        40     0.0000000
+## 10       45     1.4716981
+## ..      ...           ...
+```
+
+```r
+g <- ggplot(data=dat2, aes(x= interval, y= Average_Steps)) +
+        geom_line() +
+        theme(axis.title.x = element_text(face="bold", colour="#990000", size=20),
+           axis.text.x  = element_text(angle=90, vjust=0.5, size=8))
+
+print(g)
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-7-1.png)
+
+```r
+dat2[,which.max(dat2$Average_Steps)]
+```
+
+```
+## Source: local data frame [288 x 1]
+## 
+## Variables not shown: NA (NULL)
+```
 
 
 ## Imputing missing values
