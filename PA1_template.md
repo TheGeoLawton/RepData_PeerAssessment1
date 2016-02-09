@@ -79,8 +79,8 @@ library(dplyr)
 
 ```r
 library(ggplot2)
-dat2 <- dat %>% group_by(date) %>% summarize(Daily_Steps=sum(steps))
-dat2
+dat1 <- dat %>% group_by(date) %>% summarize(Daily_Steps=sum(steps))
+dat1
 ```
 
 ```
@@ -102,7 +102,7 @@ dat2
 ```
 
 ```r
-g <- ggplot(data=dat2, aes(x= Daily_Steps))+
+g <- ggplot(data=dat1, aes(x= Daily_Steps))+
         geom_histogram()
 print(g)
 ```
@@ -113,11 +113,11 @@ print(g)
 
 ![](PA1_template_files/figure-html/unnamed-chunk-5-1.png)
 
-From here, it's simple to find the average of all the days.
+From here, it's simple to find the average and median of all the days.
 
 
 ```r
-mean(dat2$Daily_Steps, na.rm=TRUE) #na.rm=TRUE is important or else this will return NA
+mean(dat1$Daily_Steps, na.rm=TRUE) #na.rm=TRUE is important or else this will return NA
 ```
 
 ```
@@ -125,7 +125,7 @@ mean(dat2$Daily_Steps, na.rm=TRUE) #na.rm=TRUE is important or else this will re
 ```
 
 ```r
-median(dat2$Daily_Steps, na.rm=TRUE)
+median(dat1$Daily_Steps, na.rm=TRUE)
 ```
 
 ```
@@ -172,19 +172,114 @@ print(g)
 
 ![](PA1_template_files/figure-html/unnamed-chunk-7-1.png)
 
+Finding the interval that typically has the highest number of steps may also be useful, which is easily accomplished in a dplyr pipeline.
+
+
 ```r
-dat2[,which.max(dat2$Average_Steps)]
+#finding the interval with the highest average number of steps.
+dat2 %>% filter(Average_Steps == max(Average_Steps)) %>% select(interval)
 ```
 
 ```
-## Source: local data frame [288 x 1]
+## Source: local data frame [1 x 1]
 ## 
-## Variables not shown: NA (NULL)
+##   interval
+##      (int)
+## 1      835
 ```
 
 
 ## Imputing missing values
+This dataset contains a fair number of NA or missing values, which we may want to replace with a rough estimate.
 
 
+```r
+#How many rows have NA values?
+nrow(dat %>% filter(!complete.cases(dat)))
+```
+
+```
+## [1] 2304
+```
+
+Imputing the missing values could be handled a number of ways. Since the assignment said something simple was acceptable, I will use the mean for the five-minute interval. Recall that I have already calculated the interval mean in `dat2$Average_Steps`.
+
+
+```r
+#Mutate the average steps with ifelse()
+dat3 <- dat %>% mutate(steps = ifelse(is.na(steps),                           dat2$Average_Steps[match(interval, dat2$interval)], steps))
+
+#Check that we got rid of the NA values
+nrow(dat3 %>% filter(!complete.cases(dat3)))
+```
+
+```
+## [1] 0
+```
+
+Has this significantly impacted the overview of the stats?
+
+```r
+#g is the same histogram from before
+g <- ggplot(data=dat1, aes(x= Daily_Steps))+
+        geom_histogram()
+
+#prepare and create a new histogram from imputed data for comparison
+dat4 <- dat3 %>% group_by(date) %>% summarize(Daily_Steps = sum(steps))
+h <- ggplot(data=dat4, aes(x= Daily_Steps))+
+        geom_histogram()
+
+print(g)
+```
+
+```
+## stat_bin: binwidth defaulted to range/30. Use 'binwidth = x' to adjust this.
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-11-1.png)
+
+```r
+print(h)
+```
+
+```
+## stat_bin: binwidth defaulted to range/30. Use 'binwidth = x' to adjust this.
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-11-2.png)
+
+```r
+mean(dat4$Daily_Steps, na.rm=TRUE)
+```
+
+```
+## [1] 10766.19
+```
+
+```r
+median(dat4$Daily_Steps, na.rm=TRUE)
+```
+
+```
+## [1] 10766.19
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+One might wonder what the differences in activity are between weekdays and weekends. Using weekdays() we can find the weekday of each date, and then separate weekdays and weekends.
+
+
+```r
+dat5 <- dat3 %>% mutate(date = as.Date(date),Weekday= weekdays(date, abbreviate=FALSE), Weekend = ifelse(Weekday %in% c("Saturday","Sunday"),"Weekend","Weekday"))
+
+#head(dat5)
+#unique(dat5)
+
+dat5 <- dat5 %>% group_by(Weekend, interval) %>% summarize(Average_Steps = mean(steps))
+g <- ggplot(data= dat5, aes(x=interval, y=Average_Steps))
+
+g <- g+ geom_line() + facet_grid(Weekend ~ .)
+
+print(g)
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-12-1.png)
